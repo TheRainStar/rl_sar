@@ -1,0 +1,93 @@
+# Copyright (c) 2024-2025 Ziqi Fan
+# SPDX-License-Identifier: Apache-2.0
+#
+# Isaac Lab Q25 runtime joint order (robot.joint_names == action joints):
+#   [FL,FR,RL,RR]_hip, [FL,FR,RL,RR]_thigh, [FL,FR,RL,RR]_calf
+# MuJoCo sensors/actuators are FR/FL/RR/RL interleaved; joint_mapping bridges them.
+
+q25/robot_lab:
+  model_name: "policy.pt"
+  # Frontal red board (az=0): hold / shooting-stability policy.
+  shooting_frontal_model: "policy_hold.pt"
+  # Offset blue board (+2.5 deg): twist / non-facing policy.
+  shooting_offset_model: "policy_twist.pt"
+  num_observations: 52
+  observations: ["lin_vel", "ang_vel", "gravity_vec", "commands", "dof_pos", "dof_vel", "actions", "muzzle_aim_error", "shooting_countdown", "target_azimuth"]
+  observations_history: []
+  observations_history_priority: "time"
+  clip_obs: 100.0
+  # Soft clip around policy; deploy stabilize (base.yaml) keeps most joint targets
+  # on shooting_aim_anchor_dof_pos so large |a| cannot kneel the hind legs.
+  clip_actions_lower: [-2.5, -2.5, -2.5, -2.5,
+                       -2.0, -2.0, -2.0, -2.0,
+                       -2.5, -2.5, -2.5, -2.5]
+  clip_actions_upper: [2.5, 2.5, 2.5, 2.5,
+                       2.0, 2.0, 2.0, 2.0,
+                       1.5, 1.5, 1.0, 1.0]
+  # Slightly stiffer than Isaac for MuJoCo torque-PD + aim-anchor tracking.
+  rl_kp: [120.0, 120.0, 120.0, 120.0,
+          120.0, 120.0, 120.0, 120.0,
+          120.0, 120.0, 120.0, 120.0]
+  rl_kd: [6.0, 6.0, 6.0, 6.0,
+          6.0, 6.0, 6.0, 6.0,
+          6.0, 6.0, 6.0, 6.0]
+  fixed_kp: [120.0, 120.0, 120.0, 120.0,
+             120.0, 120.0, 120.0, 120.0,
+             120.0, 120.0, 120.0, 120.0]
+  fixed_kd: [6.0, 6.0, 6.0, 6.0,
+             6.0, 6.0, 6.0, 6.0,
+             6.0, 6.0, 6.0, 6.0]
+  num_of_dofs: 12
+  action_scale: [0.125, 0.125, 0.125, 0.125,
+                 0.25, 0.25, 0.25, 0.25,
+                 0.25, 0.25, 0.25, 0.25]
+  wheel_indices: []
+  lin_vel_scale: 1.0
+  ang_vel_scale: 0.25
+  dof_pos_scale: 1.0
+  dof_vel_scale: 0.05
+  commands_scale: [1.0, 1.0, 1.0]
+  torque_limits: [85.0, 85.0, 85.0, 85.0,
+                  85.0, 85.0, 85.0, 85.0,
+                  180.0, 180.0, 180.0, 180.0]
+  default_dof_pos: [0.0, 0.0, 0.0, 0.0,
+                    -0.67, -0.67, -0.67, -0.67,
+                    1.3, 1.3, 1.3, 1.3]
+  # Copied from base.yaml so InitRL cannot drop the MuJoCo-calibrated stand.
+  shooting_stand_dof_pos: [0.0, 0.0, 0.0, 0.0,
+                           -0.65, -0.65, -0.90, -0.90,
+                           1.236, 1.236, 1.164, 1.164]
+  # policy/Isaac index -> MuJoCo FR/FL/RR/RL sensor&actuator index
+  joint_mapping: [3, 0, 9, 6, 4, 1, 10, 7, 5, 2, 11, 8]
+  shooting_target_distance: 100.0
+  shooting_target_height: 1.4
+  shooting_hit_radius: 0.25
+  # Active aim target azimuth (rad). Default 0 = frontal red board.
+  # Runtime: [1] loads shooting_frontal_model (red), [3] loads shooting_offset_model (blue).
+  shooting_target_azimuth: 0.0
+  # Fixed non-facing board: +2.5 deg = robot_lab TARGET_AZIMUTH_RANGE_DEG edge.
+  shooting_offset_target_azimuth: 0.0436332313
+  shooting_recoil_interval: 0.08
+  shooting_recoil_duration: 0.005
+  # Link-frame magnitude (N). Isaac keeps the wrench on after the first 80 ms.
+  # Hold terminal stage is 22 N; twist terminal stage is 40 N.
+  shooting_recoil_force: -36.0
+  shooting_frontal_recoil_force: 22.0
+  shooting_offset_recoil_force: 40.0
+  # Isaac planted-twist hip preshape: hip += side_sign * gain * relative_azimuth.
+  shooting_hip_twist_gain: 3.2
+  shooting_reset_height: 0.45
+  shooting_policy_blend_duration: 1.5
+  shooting_policy_debug_obs: true
+  shooting_telemetry_interval: 2.0
+  # Default launch is SIM2SIM (policy mix=1, servo/twist off, Isaac PD 80/2).
+  # These values are the DEPLOY demo recipe (used with argv deploy / SHOOTING_MODE=deploy).
+  shooting_sim2sim: 1
+  shooting_deploy_stabilize: 1
+  shooting_policy_mix: 0.0
+  shooting_aim_servo: 1
+  shooting_aim_anchor_dof_pos: [0.0, 0.0, 0.0, 0.0,
+                                -0.65, -0.65, -0.90, -0.90,
+                                1.236, 1.236, 1.164, 1.164]
+  shooting_leg_thigh_clamp: [-1.10, -0.25]
+  shooting_leg_calf_clamp: [0.90, 1.50]

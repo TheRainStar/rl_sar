@@ -1,0 +1,10 @@
+<launch>
+    <!-- Q25 shooting: spawn crouched, paused, so the robot does not collapse before rl_sim starts. -->
+    <include file="$(find rl_sar)/launch/gazebo.launch">
+        <arg name="rname" value="q25"/>
+        <arg name="wname" value="shooting_stability"/>
+        <arg name="spawn_z" value="0.68"/>
+        <arg name="paused" value="true"/>
+        <arg name="spawn_joint_args" value="-J FR_hip_joint 0.0 -J FR_thigh_joint -0.95 -J FR_calf_joint 1.85 -J FL_hip_joint 0.0 -J FL_thigh_joint -0.95 -J FL_calf_joint 1.85 -J RR_hip_joint 0.0 -J RR_thigh_joint -0.95 -J RR_calf_joint 1.85 -J RL_hip_joint 0.0 -J RL_thigh_joint -0.95 -J RL_calf_joint 1.85"/>
+    </include>
+</launch>
